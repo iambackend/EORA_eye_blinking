@@ -14,6 +14,7 @@ import time
 import dlib
 import cv2
 
+
 def eye_aspect_ratio(eye):
     # compute the euclidean distances between the two sets of
     # vertical eye landmarks (x, y)-coordinates
@@ -42,8 +43,10 @@ args = vars(ap.parse_args())
 # define two constants, one for the eye aspect ratio to indicate
 # blink and then a second constant for the number of consecutive
 # frames the eye must be below the threshold
-EYE_AR_THRESH = 0.20 # with 20 it has big recall and not so good precision, but ok.
+EYE_AR_THRESH = 0.20  # with 20 it has big recall and not so good precision, but ok.
 EYE_AR_CONSEC_FRAMES = 3
+EYE_AR_CONSEC_FRAMES_ALERT = 60  # number of closed eyes frames to cause alert.
+EYE_AR_CONSEC_FRAMES_THRESH = 0.9  # how many frames we need to be sure that person is asleep.
 
 # initialize the frame counters and the total number of blinks
 COUNTER = 0
@@ -72,6 +75,8 @@ else:
 
 time.sleep(1.0)
 
+#setup for sleep tracking
+ears = [0] * EYE_AR_CONSEC_FRAMES_ALERT
 # loop over frames from the video stream
 while True:
     # if this is a file video stream, then we need to check if
@@ -105,14 +110,15 @@ while True:
         rightEAR = eye_aspect_ratio(rightEye)
 
         # average the eye aspect ratio together for both eyes
-        ear = (leftEAR + rightEAR) / 2.0
+        # ear = (leftEAR + rightEAR) / 2.0
+        ear = leftEAR  # TODO
 
         # compute the convex hull for the left and right eye, then
         # visualize each of the eyes
         leftEyeHull = cv2.convexHull(leftEye)
         rightEyeHull = cv2.convexHull(rightEye)
         cv2.drawContours(frame, [leftEyeHull], -1, (0, 255, 0), 1)
-        cv2.drawContours(frame, [rightEyeHull], -1, (0, 255, 0), 1)
+        cv2.drawContours(frame, [rightEyeHull], -1, (255, 0, 0), 1)
 
         # check to see if the eye aspect ratio is below the blink
         # threshold, and if so, increment the blink frame counter
@@ -129,6 +135,19 @@ while True:
 
             # reset the eye frame counter
             COUNTER = 0
+
+        ears.append(1 if ear < EYE_AR_THRESH else 0)
+
+        average = sum(ears[-EYE_AR_CONSEC_FRAMES_ALERT:]) / EYE_AR_CONSEC_FRAMES_ALERT;
+        print(sum(ears[-EYE_AR_CONSEC_FRAMES_ALERT:]))
+        if average > EYE_AR_CONSEC_FRAMES_THRESH:
+            cv2.putText(frame, "Alert!", (150, 60),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1.7, (0, 0, 255), 2)
+        cv2.putText(frame, "Closed frames: {}".format(COUNTER), (10, 240),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        cv2.putText(frame, "Closed rate: {}".format(average), (250, 240),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+
 
         # draw the total number of blinks on the frame along with
         # the computed eye aspect ratio for the frame
