@@ -14,7 +14,6 @@ import time
 import dlib
 import cv2
 
-
 def eye_aspect_ratio(eye):
     # compute the euclidean distances between the two sets of
     # vertical eye landmarks (x, y)-coordinates
@@ -34,7 +33,7 @@ def eye_aspect_ratio(eye):
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("-p", "--shape-predictor", required=True,
+ap.add_argument("-p", "--shape_predictor", required=True,
                 help="path to facial landmark predictor")
 ap.add_argument("-v", "--video", type=str, default="",
                 help="path to input video file")
@@ -43,7 +42,7 @@ args = vars(ap.parse_args())
 # define two constants, one for the eye aspect ratio to indicate
 # blink and then a second constant for the number of consecutive
 # frames the eye must be below the threshold
-EYE_AR_THRESH = 0.3
+EYE_AR_THRESH = 0.20 # with 20 it has big recall and not so good precision, but ok.
 EYE_AR_CONSEC_FRAMES = 3
 
 # initialize the frame counters and the total number of blinks
@@ -64,11 +63,12 @@ predictor = dlib.shape_predictor(args["shape_predictor"])
 # start the video stream thread
 print("[INFO] starting video stream thread...")
 if args["video"] == "":
-    # vs = VideoStream(src=0).start()
+    vs = VideoStream(src=0).start()
     # vs = VideoStream(usePiCamera=True).start()
-    # fileStream = False
-vs = FileVideoStream(args["video"]).start()
-fileStream = True
+    fileStream = False
+else:
+    vs = FileVideoStream(args["video"]).start()
+    fileStream = True
 
 time.sleep(1.0)
 
