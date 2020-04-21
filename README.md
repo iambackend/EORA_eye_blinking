@@ -9,3 +9,4 @@ EORA Test Task with eyes blinking
    
    `python detect_blinks --shape_predictor shape_predictor_68_face_landmarks.dat --video VIDEOFILE` – if you want it with video.
 
+Press Q to quit.

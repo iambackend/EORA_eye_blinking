@@ -4,7 +4,7 @@
 
 # import the necessary packages
 from scipy.spatial import distance as dist
-from imutils.video import FileVideoStream
+from imutils.video import FileVideoStream, FPS
 from imutils.video import VideoStream
 from imutils import face_utils
 import numpy as np
@@ -77,6 +77,7 @@ time.sleep(1.0)
 
 #setup for sleep tracking
 ears = [0] * EYE_AR_CONSEC_FRAMES_ALERT
+
 # loop over frames from the video stream
 while True:
     # if this is a file video stream, then we need to check if
@@ -110,8 +111,8 @@ while True:
         rightEAR = eye_aspect_ratio(rightEye)
 
         # average the eye aspect ratio together for both eyes
-        # ear = (leftEAR + rightEAR) / 2.0
-        ear = leftEAR  # TODO
+        ear = (leftEAR + rightEAR) / 2.0
+        # ear = leftEAR
 
         # compute the convex hull for the left and right eye, then
         # visualize each of the eyes
@@ -139,7 +140,6 @@ while True:
         ears.append(1 if ear < EYE_AR_THRESH else 0)
 
         average = sum(ears[-EYE_AR_CONSEC_FRAMES_ALERT:]) / EYE_AR_CONSEC_FRAMES_ALERT;
-        print(sum(ears[-EYE_AR_CONSEC_FRAMES_ALERT:]))
         if average > EYE_AR_CONSEC_FRAMES_THRESH:
             cv2.putText(frame, "Alert!", (150, 60),
                         cv2.FONT_HERSHEY_SIMPLEX, 1.7, (0, 0, 255), 2)
