@@ -9,4 +9,6 @@ EORA Test Task with eyes blinking
    
    `python detect_blinks --shape_predictor shape_predictor_68_face_landmarks.dat --video VIDEOFILE` – if you want it with video.
 
+EYE_AR_THRESH constant is not always optimal, maybe you will need to modify it. Choose between 20 and 30. I suppose it depends on lightning, but not sure.
+
 Press Q to quit.

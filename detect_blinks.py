@@ -3,6 +3,8 @@
 # python detect_blinks.py --shape-predictor shape_predictor_68_face_landmarks.dat
 
 # import the necessary packages
+import datetime
+
 from scipy.spatial import distance as dist
 from imutils.video import FileVideoStream, FPS
 from imutils.video import VideoStream
@@ -43,14 +45,13 @@ args = vars(ap.parse_args())
 # define two constants, one for the eye aspect ratio to indicate
 # blink and then a second constant for the number of consecutive
 # frames the eye must be below the threshold
-EYE_AR_THRESH = 0.20  # with 20 it has big recall and not so good precision, but ok.
+EYE_AR_THRESH = 0.25  # this threshold depends on lightning, I think. #TODO
 EYE_AR_CONSEC_FRAMES = 3
-EYE_AR_CONSEC_FRAMES_ALERT = 60  # number of closed eyes frames to cause alert.
-EYE_AR_CONSEC_FRAMES_THRESH = 0.9  # how many frames we need to be sure that person is asleep.
 
 # initialize the frame counters and the total number of blinks
 COUNTER = 0
 TOTAL = 0
+ALERT_CONTRE_COUNTER = False
 
 # initialize dlib's face detector (HOG-based) and then create
 # the facial landmark predictor
@@ -75,9 +76,9 @@ else:
 
 time.sleep(1.0)
 
-#setup for sleep tracking
-ears = [0] * EYE_AR_CONSEC_FRAMES_ALERT
-
+# setup for sleep tracking
+# last time eyes were open
+ALERT_COUNTER = datetime.datetime.now()
 # loop over frames from the video stream
 while True:
     # if this is a file video stream, then we need to check if
@@ -125,6 +126,7 @@ while True:
         # threshold, and if so, increment the blink frame counter
         if ear < EYE_AR_THRESH:
             COUNTER += 1
+            ALERT_CONTRE_COUNTER = False
 
         # otherwise, the eye aspect ratio is not below the blink
         # threshold
@@ -137,17 +139,20 @@ while True:
             # reset the eye frame counter
             COUNTER = 0
 
-        ears.append(1 if ear < EYE_AR_THRESH else 0)
+            # maybe one frame was mistook for open eye?
+            if not ALERT_CONTRE_COUNTER:
+                ALERT_CONTRE_COUNTER = True
+            else:
+                ALERT_COUNTER = datetime.datetime.now()
+                ALERT_CONTRE_COUNTER = False
 
-        average = sum(ears[-EYE_AR_CONSEC_FRAMES_ALERT:]) / EYE_AR_CONSEC_FRAMES_ALERT;
-        if average > EYE_AR_CONSEC_FRAMES_THRESH:
+        # ears.append(1 if ear < EYE_AR_THRESH else 0)
+
+        if (datetime.datetime.now() - ALERT_COUNTER).total_seconds() > 2:
             cv2.putText(frame, "Alert!", (150, 60),
                         cv2.FONT_HERSHEY_SIMPLEX, 1.7, (0, 0, 255), 2)
-        cv2.putText(frame, "Closed frames: {}".format(COUNTER), (10, 240),
+        cv2.putText(frame, "Closed for: {:.2f} seconds".format((datetime.datetime.now() - ALERT_COUNTER).total_seconds()), (10, 240),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-        cv2.putText(frame, "Closed rate: {}".format(average), (250, 240),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-
 
         # draw the total number of blinks on the frame along with
         # the computed eye aspect ratio for the frame
